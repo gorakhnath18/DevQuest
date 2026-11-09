@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { getRoadmapSettings, listRoadmap, setRoadmapStartDate, toggleTask } from "../controllers/roadmapController.js";
+import { protect } from "../middleware/auth.js";
+const router = Router();
+router.use(protect);
+router.get("/", listRoadmap);
+router.get("/settings", getRoadmapSettings);
+router.put("/settings/start-date", setRoadmapStartDate);
+router.patch("/:dayId/tasks/:taskId", toggleTask);
+export default router;

@@ -1,0 +1,25 @@
+.company-toolbar{display:flex;gap:10px;margin:20px 0}
+.company-toolbar .search-box{flex:1}
+.company-toolbar select{border:1px solid var(--line);border-radius:7px;background:#121d2e;color:#dce5f2;padding:9px 11px;font-size:11px}
+.company-summary{display:flex;align-items:center;gap:7px;color:#99a9bf;font:10px 'DM Mono';margin-bottom:12px}
+.company-table-wrap{width:100%;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.company-table{width:100%;min-width:920px;border-collapse:collapse;text-align:left}
+.company-table th{background:#0d1726;color:#788ba3;font:9px 'DM Mono';letter-spacing:.8px;padding:12px 14px}
+.company-table td{border-top:1px solid #202c40;padding:11px 14px;color:#b9c6d8;font-size:11px}
+.company-table tbody tr:hover{background:#131f30}
+.company-name-cell{display:flex;align-items:center;gap:10px;min-width:160px}
+.company-name-cell>b{font:600 12px 'Space Grotesk';color:#e4ebf6}
+.company-mark{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:8px;color:#81dbe2;background:#183245}
+.company-industry{display:inline-block;border:1px solid #293a4f;border-radius:20px;padding:5px 8px;color:#9daec2;font-size:9px;white-space:nowrap}
+.company-unknown-pay{display:inline-block;color:#9aabc0;border:1px dashed #46546a;border-radius:5px;padding:5px 7px;font-size:9px;white-space:nowrap}
+.company-application-select{max-width:130px;border:1px solid var(--line);border-radius:6px;background:#0d1726;color:#c5d1e1;padding:7px;font-size:10px}
+.company-links{display:flex;gap:10px}
+.company-links a{display:inline-flex;align-items:center;gap:4px;color:#8bdde4;font-size:10px;white-space:nowrap}
+.company-links a:hover{text-decoration:underline}
+.company-pagination{display:flex;align-items:center;justify-content:center;gap:15px;margin-top:14px}
+.company-pagination>span{font:10px 'DM Mono';color:#9aa9bd}
+.company-pagination button:disabled{opacity:.45;cursor:not-allowed}
+.company-disclaimer{margin-top:17px;color:#8392a8;font-size:10px;line-height:1.6}
+.company-disclaimer a{color:#8bdde4}
+.company-disclaimer a:hover{text-decoration:underline}
+@media(max-width:600px){.company-toolbar{flex-direction:column}.company-table{min-width:700px}.company-pagination{gap:8px}}

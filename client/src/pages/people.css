@@ -1,0 +1,4 @@
+.person-name-link{display:block;color:inherit;width:fit-content}
+.person-name-link:hover{color:var(--cyan)}
+.people-invite-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:15px;padding:8px 10px;border:1px solid #294457;border-radius:6px;background:#102234;color:#91dce3;font-size:10px;font-weight:600;cursor:pointer}
+.people-invite-button:hover{border-color:#4c8792;background:#142b3b}

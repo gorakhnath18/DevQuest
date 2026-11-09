@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { archiveProblem, createProblem, listProblems, updateProblem, updateProblemProgress } from "../controllers/problemController.js";
+import { protect } from "../middleware/auth.js";
+const router = Router();
+router.use(protect);
+router.get("/", listProblems);
+router.post("/", createProblem);
+router.patch("/:id", updateProblem);
+router.delete("/:id", archiveProblem);
+router.patch("/:id/progress", updateProblemProgress);
+export default router;
