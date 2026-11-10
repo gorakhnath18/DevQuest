@@ -16,7 +16,7 @@ export default function Roadmap() {
     try {
       const [roadmapResponse, problemsResponse] = await Promise.all([
         api.get("/roadmap"),
-        api.get("/problems", { params: { limit: 1000 } })
+        api.get("/problems", { params: { limit: 2000, platform: "LeetCode" } })
       ]);
       const roadmapDays = roadmapResponse.data;
       setDays(roadmapDays);
@@ -43,22 +43,27 @@ export default function Roadmap() {
   const xpForProblem = problem => ({ Easy: 1, Medium: 2, Hard: 3 }[problem.difficulty] || 1);
 
   async function toggleStudyTask(day, task) {
-    if (day.progress.completedTasks.includes(task._id)) return;
+    if (savingIds.includes(task._id)) return;
+    setSavingIds(ids => [...ids, task._id]);
+    setError("");
     try {
       const { data } = await api.patch(`/roadmap/${day._id}/tasks/${task._id}`);
       setDays(items => items.map(item => item._id === day._id ? { ...item, progress: data.progress } : item));
     } catch (e) {
       setError(e.response?.data?.message || "Could not update this task.");
+    } finally {
+      setSavingIds(ids => ids.filter(id => id !== task._id));
     }
   }
 
-  async function markProblemSolved(problem) {
+  async function toggleProblemSolved(problem) {
     const current = problemById.get(problem._id);
-    if (current?.userProgress?.status === "Solved" || savingIds.includes(problem._id)) return;
+    if (savingIds.includes(problem._id)) return;
     setSavingIds(ids => [...ids, problem._id]);
     setError("");
     try {
-      const { data } = await api.patch(`/problems/${problem._id}/progress`, { status: "Solved" });
+      const status = current?.userProgress?.status === "Solved" ? "Not Started" : "Solved";
+      const { data } = await api.patch(`/problems/${problem._id}/progress`, { status });
       setProblems(items => items.map(item => item._id === problem._id
         ? { ...item, userProgress: data.progress }
         : item));
@@ -85,7 +90,7 @@ export default function Roadmap() {
       <div><strong>{solvedCount}</strong><small>DSA PROBLEMS SOLVED</small></div>
       <div><strong>{assignedProblems.length}</strong><small>ASSIGNED PROBLEMS</small></div>
       <div><strong>{studyTasks.length ? Math.round(completedStudyTasks / studyTasks.length * 100) : 0}%</strong><small>STUDY TASKS DONE</small></div>
-      <p>Easy problems earn 1 XP, Medium 2 XP, and Hard 3 XP. Completed problems stay completed.</p>
+      <p>Easy problems earn 1 XP, Medium 2 XP, and Hard 3 XP. Click a checked box again to undo it.</p>
     </div>
     <div className="roadmap-toolbar">
       <div className="search-box"><Search size={16}/><input aria-label="Find a roadmap day" placeholder="Find a day or topic…" value={search} onChange={event => setSearch(event.target.value)}/></div>
@@ -93,8 +98,9 @@ export default function Roadmap() {
     </div>
     <div className="starter-day-list">
       {filteredDays.map(day => {
-        const studyDone = day.tasks.filter(task => !task.problems?.length && day.progress.completedTasks.includes(task._id)).length;
-        const studyTotal = day.tasks.filter(task => !task.problems?.length).length;
+        const studyTasksForDay = day.tasks.filter(task => !task.problems?.length);
+        const studyDone = studyTasksForDay.some(task => day.progress.completedTasks.includes(task._id)) ? 1 : 0;
+        const studyTotal = studyTasksForDay.length ? 1 : 0;
         const dayProblems = day.tasks.flatMap(task => task.problems || []);
         const daySolved = dayProblems.filter(problem => problemById.get(problem._id)?.userProgress?.status === "Solved").length;
         const expanded = openDay === day._id;
@@ -108,13 +114,15 @@ export default function Roadmap() {
             {expanded ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
           </button>
           {expanded && <div className="starter-day-content">
-            {day.lesson && <section className="starter-lesson"><h3><BookOpen size={16}/> What to learn</h3><p>{day.lesson}</p></section>}
-            {!!day.topics?.length && <div className="starter-topic-list"><b>Topics to cover</b><ul>{day.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></div>}
-            {day.tasks.filter(task => !task.problems?.length).map(task => {
+            {studyTasksForDay.slice(0, 1).map(task => {
               const checked = day.progress.completedTasks.includes(task._id);
               return <div className={`starter-study-task ${checked ? "completed" : ""}`} key={task._id}>
-                <button className="rb-check" disabled={checked} aria-label={checked ? "Task completed" : `Mark ${task.title} complete`} onClick={() => toggleStudyTask(day, task)}>{checked && <Check size={14}/>}</button>
-                <span><b>{task.title}</b><small>{task.description}</small></span>
+                <button type="button" className={`rb-check ${checked ? "checked" : ""}`} role="checkbox" aria-checked={checked} disabled={savingIds.includes(task._id)} aria-label={`${checked ? "Unmark" : "Mark"} ${task.title} ${checked ? "incomplete" : "complete"}`} onClick={() => toggleStudyTask(day, task)}>{checked && <Check size={14}/>}</button>
+                <div className="starter-study-copy">
+                  <b><BookOpen size={14}/> What to learn: {task.title.replace(/^Study:\s*/, "")}</b>
+                  {day.lesson && <p>{day.lesson}</p>}
+                  {!!day.topics?.length && <ul>{day.topics.map(topic => <li key={topic}>{topic}</li>)}</ul>}
+                </div>
                 <em>+{task.xp} XP</em>
               </div>;
             })}
@@ -124,7 +132,7 @@ export default function Roadmap() {
                 const current = problemById.get(problem._id) || problem;
                 const solved = current.userProgress?.status === "Solved";
                 return <div className={`starter-problem ${solved ? "completed" : ""}`} key={`${day._id}-${problem._id}`}>
-                  <input type="checkbox" checked={solved} disabled={solved || savingIds.includes(problem._id)} aria-label={`Mark ${problem.title} solved`} onChange={() => markProblemSolved(problem)}/>
+                  <input type="checkbox" checked={solved} disabled={savingIds.includes(problem._id)} aria-label={`Mark ${problem.title} ${solved ? "unsolved" : "solved"}`} onChange={() => toggleProblemSolved(problem)}/>
                   <span className="starter-problem-copy"><a href={problem.url} target="_blank" rel="noreferrer">{problem.title} <ExternalLink size={12}/></a><small>{problem.topic} · {problem.difficulty} · {problem.platform}</small></span>
                   <em>+{xpForProblem(current)} XP</em>
                 </div>;

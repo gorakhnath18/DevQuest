@@ -29,6 +29,13 @@
 .difficulty-progress-grid strong,.dsa-difficulty-summary strong{font:600 19px 'Space Grotesk';margin-left:auto}
 .dsa-difficulty-summary{margin:-7px 0 16px}
 .dsa-difficulty-summary>div{padding:9px 13px}
+.problem-table input[type=checkbox],.starter-problem input[type=checkbox]{appearance:none;display:grid;place-content:center;width:18px;height:18px;flex:none;margin:0;border:1px solid #60748a;border-radius:5px;background:#111b2b;cursor:pointer;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease}
+.problem-table input[type=checkbox]::before,.starter-problem input[type=checkbox]::before{content:"";width:5px;height:9px;border:solid #f8fafc;border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transition:transform .12s ease}
+.problem-table input[type=checkbox]:checked,.starter-problem input[type=checkbox]:checked{border-color:#28aebe;background:#168b9a}
+.problem-table input[type=checkbox]:checked::before,.starter-problem input[type=checkbox]:checked::before{transform:rotate(45deg) scale(1)}
+.problem-table input[type=checkbox]:not(:disabled):hover,.starter-problem input[type=checkbox]:not(:disabled):hover{border-color:#58d4df}
+.problem-table input[type=checkbox]:focus-visible,.starter-problem input[type=checkbox]:focus-visible{outline:2px solid #8ceaf0;outline-offset:3px}
+.problem-table input[type=checkbox]:disabled,.starter-problem input[type=checkbox]:disabled{opacity:.55;cursor:wait}
 .dsa-difficulty-summary small{font:9px 'DM Mono';color:var(--muted)}
 .contributor-panel{margin-top:15px}
 .contributor-list{display:grid;gap:8px;margin:12px 0}

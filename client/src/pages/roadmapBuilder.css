@@ -79,8 +79,11 @@
 .rb-subject b{font-size:11px;color:#afe6eb}
 .rb-subject span,.rb-day-notes{font-size:10px;color:#9eacc0;line-height:1.6}
 .rb-task{display:flex;align-items:flex-start;gap:10px;padding:12px 2px;border-bottom:1px solid #202c40}
-.rb-check{width:19px;height:19px;flex:none;margin-top:1px;border-radius:5px;border:1px solid #496178;background:transparent;color:#08131c;display:grid;place-items:center;cursor:pointer}
-.rb-task.completed .rb-check{background:var(--cyan);border-color:var(--cyan)}
+.rb-check{width:19px;height:19px;flex:none;margin-top:1px;border-radius:5px;border:1px solid #60748a;background:#111b2b;color:#f8fafc;display:grid;place-items:center;cursor:pointer;transition:background .12s ease,border-color .12s ease,box-shadow .12s ease}
+.rb-check:hover:not(:disabled){border-color:#58d4df}
+.rb-check:focus-visible{outline:2px solid #8ceaf0;outline-offset:3px}
+.rb-check:disabled{opacity:.55;cursor:wait}
+.rb-task.completed .rb-check,.starter-study-task .rb-check.checked{background:#168b9a;border-color:#28aebe}
 .rb-task-copy{flex:1;min-width:0}
 .rb-task-copy>b{font-size:11px}
 .rb-task.completed .rb-task-copy>b{text-decoration:line-through;color:#8392a7}
@@ -109,23 +112,21 @@
 .starter-day-title b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .starter-day-title small{font-size:10px;color:var(--muted)}
 .starter-day-content{padding:4px 18px 18px 64px}
-.starter-lesson,.starter-topic-list{padding:12px 14px;margin:5px 0 11px;border:1px solid #26384b;border-radius:8px;background:#0d1725}
-.starter-lesson h3,.starter-problems h3{display:flex;align-items:center;gap:7px;margin:0 0 7px;color:#bce9e9;font:600 12px 'Space Grotesk'}
-.starter-lesson p{margin:0;color:#aab8ca;font-size:11px;line-height:1.65}
-.starter-topic-list>b{font-size:11px;color:#aab8ca}
-.starter-topic-list ul{margin:7px 0 0;padding-left:17px;color:#aab8ca;font-size:11px;line-height:1.8}
-.starter-study-task,.starter-problem{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #202c40}
-.starter-study-task>span,.starter-problem-copy{display:grid;gap:4px;flex:1;min-width:0}
+.starter-study-task{display:flex;align-items:flex-start;gap:12px;padding:12px 10px;margin:7px 0;border:1px solid #26384b;border-radius:8px;background:#0d1725}
+.starter-study-copy{display:grid;gap:7px;flex:1;min-width:0}
+.starter-study-copy>b{display:flex;align-items:center;gap:6px;color:#bce9e9;font-size:12px}
+.starter-study-copy>b svg{flex:none}
+.starter-study-copy p{margin:0;color:#aab8ca;font-size:11px;line-height:1.65}
+.starter-study-copy ul{display:grid;gap:4px;margin:0;padding-left:18px;color:#aab8ca;font-size:11px;line-height:1.6}
+.starter-problem{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #202c40}
+.starter-problem-copy{display:grid;gap:4px;flex:1;min-width:0}
 .starter-study-task b{font-size:11px}
 .starter-study-task small,.starter-problem-copy small{color:#8f9eb2;font-size:10px;line-height:1.5}
 .starter-study-task.completed b,.starter-problem.completed .starter-problem-copy>a{color:#8492a7}
 .starter-study-task em,.starter-problem em{font:9px 'DM Mono';font-style:normal;color:#8ce4bb;white-space:nowrap}
-.starter-study-task .rb-check:disabled{opacity:1;cursor:default}
 .starter-problems{margin-top:15px}
 .starter-problems h3{justify-content:space-between;margin-bottom:5px}
 .starter-problems h3 span{font:9px 'DM Mono';color:#8395a9}
-.starter-problem input[type=checkbox],.problem-table input[type=checkbox]{width:17px;height:17px;accent-color:var(--cyan);flex:none;cursor:pointer}
-.starter-problem input[type=checkbox]:disabled{cursor:default}
 .starter-problem-copy>a{display:inline-flex;align-items:center;gap:5px;width:fit-content;color:#86d6de;font-size:11px}
 .starter-problem-copy>a:hover{text-decoration:underline}
 .starter-problem.completed em{color:#7d91a4}

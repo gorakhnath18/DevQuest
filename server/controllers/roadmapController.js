@@ -67,10 +67,17 @@ export async function toggleTask(req, res) {
   let progress = await RoadmapProgress.findOne({ user: req.user._id, day: dayId });
   if (!progress) progress = new RoadmapProgress({ user: req.user._id, day: dayId });
   const alreadyDone = progress.completedTasks.some(id => String(id) === taskId);
-  if (alreadyDone) return res.status(409).json({ message: "Completed roadmap tasks cannot be unchecked." });
-  progress.completedTasks.push(task._id);
-  await awardXp(req.user._id, `roadmap:${dayId}:${taskId}`, task.xp, `Completed: ${task.title}`);
-  progress.completed = day.tasks.length > 0 && day.tasks.every(t => progress.completedTasks.some(id => String(id) === String(t._id)));
+  const xpKey = `roadmap:${dayId}:${taskId}`;
+  if (alreadyDone) {
+    progress.completedTasks = progress.completedTasks.filter(id => String(id) !== taskId);
+    await XpEvent.deleteOne({ user: req.user._id, key: xpKey });
+  } else {
+    progress.completedTasks.push(task._id);
+    await awardXp(req.user._id, xpKey, task.xp, `Completed: ${task.title}`);
+  }
+  progress.completed = day.tasks.length > 0 && day.tasks.every(t =>
+    progress.completedTasks.some(id => String(id) === String(t._id))
+  );
   await progress.save();
   const totalXp = await XpEvent.aggregate([{ $match: { user: req.user._id } }, { $group: { _id: null, total: { $sum: "$points" } } }]);
   res.json({ progress: { completedTasks: progress.completedTasks.map(String), completed: progress.completed }, xp: totalXp[0]?.total || 0 });

@@ -2,15 +2,16 @@ import Problem from "../models/Problem.js";
 import ProblemProgress from "../models/ProblemProgress.js";
 import XpEvent from "../models/XpEvent.js";
 import { awardXp } from "../utils/xp.js";
-import { completeAssignedTasks } from "./customRoadmapController.js";
+import { completeAssignedTasks, uncompleteAssignedTasks } from "./customRoadmapController.js";
 
 export async function listProblems(req, res) {
-  const { q, topic, difficulty } = req.query;
+  const { q, topic, difficulty, platform } = req.query;
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const limit = Math.min(1000, Math.max(1, Number.parseInt(req.query.limit, 10) || 1000));
+  const limit = Math.min(2000, Math.max(1, Number.parseInt(req.query.limit, 10) || 1000));
   const filter = { archived: false };
   if (topic) filter.topic = topic;
   if (difficulty) filter.difficulty = difficulty;
+  if (platform) filter.platform = platform;
   if (q) {
     const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (escaped) filter.$or = [
@@ -19,16 +20,17 @@ export async function listProblems(req, res) {
       { pattern: { $regex: escaped, $options: "i" } }
     ];
   }
-  const [problems, total, topics] = await Promise.all([
+  const [problems, total, topics, platforms] = await Promise.all([
     Problem.find(filter).sort({ topic: 1, title: 1 }).skip((page - 1) * limit).limit(limit).lean(),
     Problem.countDocuments(filter),
-    Problem.distinct("topic", { archived: false })
+    Problem.distinct("topic", { archived: false }),
+    Problem.distinct("platform", { archived: false })
   ]);
   const progress = await ProblemProgress.find({ user: req.user._id, problem: { $in: problems.map(p => p._id) } }).lean();
   const map = new Map(progress.map(p => [String(p.problem), p]));
   res.json({
     items: problems.map(p => ({ ...p, userProgress: map.get(String(p._id)) || { status: "Not Started", notes: "", attempts: 0 } })),
-    page, limit, total, topics: topics.sort()
+    page, limit, total, topics: topics.sort(), platforms: platforms.sort()
   });
 }
 
@@ -65,18 +67,20 @@ export async function updateProblemProgress(req, res) {
   if (!problem || problem.archived) return res.status(404).json({ message: "Problem not found." });
   let progress = await ProblemProgress.findOne({ user: req.user._id, problem: problem._id });
   const wasSolved = progress?.status === "Solved";
-  if (wasSolved && status !== "Solved") return res.status(409).json({ message: "Solved problems cannot be marked incomplete." });
   if (!progress) progress = new ProblemProgress({ user: req.user._id, problem: problem._id });
   progress.status = status;
+  progress.solvedAt = status === "Solved" ? progress.solvedAt || new Date() : null;
   if (notes !== undefined) progress.notes = String(notes).slice(0, 3000);
   if (attempts !== undefined) progress.attempts = Math.max(0, Math.min(1000, Number(attempts) || 0));
   if (status === "Solved" && !wasSolved) {
-    progress.solvedAt = new Date();
     const points = { Easy: 1, Medium: 2, Hard: 3 }[problem.difficulty];
     await awardXp(req.user._id, `problem:${problem._id}:solved`, points, `Solved ${problem.title}`);
+  } else if (wasSolved && status !== "Solved") {
+    await XpEvent.deleteOne({ user: req.user._id, key: `problem:${problem._id}:solved` });
   }
   await progress.save();
   if (status === "Solved" && !wasSolved) await completeAssignedTasks(req.user._id, problem);
+  if (wasSolved && status !== "Solved") await uncompleteAssignedTasks(req.user._id, problem);
   const totalXp = await XpEvent.aggregate([{ $match: { user: req.user._id } }, { $group: { _id: null, total: { $sum: "$points" } } }]);
   res.json({ progress, xp: totalXp[0]?.total || 0 });
 }

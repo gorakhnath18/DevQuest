@@ -4,6 +4,7 @@ import { connectDB } from "../config/db.js";
 import RoadmapDay from "../models/RoadmapDay.js";
 import Problem from "../models/Problem.js";
 import Company from "../models/Company.js";
+import { getCompanyPrepLeetCodeProblems } from "./leetcodeCatalog.js";
 
 const companies = [
   { name: "Adobe", slug: "adobe", industry: "Software", website: "https://www.adobe.com/", careersPage: "https://careers.adobe.com/", sourceUrl: "https://careers.adobe.com/" },
@@ -96,11 +97,11 @@ const phases = [
 
 const learningGuides = {
   "Programming fundamentals": [
-    { title: "Variables, types, and input/output", topics: ["Variables and assignment", "Numbers, strings, and booleans", "Reading input and printing output"], lesson: "Choose one programming language and learn how to store values, convert between common types, read input, and print clear output. Trace each value through a short program.", practice: "Write small programs that read input, transform values, and print the expected result." },
-    { title: "Conditions and boolean logic", topics: ["if / else branches", "Comparison operators", "Combining conditions"], lesson: "Practice branching with if/else, comparison operators, and boolean expressions. Trace which branch runs for boundary values and explain why.", practice: "Implement range checks, sign checks, and simple decision rules; test boundary cases." },
-    { title: "Loops and iteration", topics: ["for and while loops", "Loop counters", "Off-by-one boundaries"], lesson: "Use loops to repeat work, track a changing state, and stop at the right boundary. Dry-run each iteration on paper before coding.", practice: "Write count, sum, minimum, and maximum loops over a sequence." },
-    { title: "Functions and decomposition", topics: ["Parameters and return values", "Scope", "Small reusable functions"], lesson: "Break a problem into named functions with clear inputs and outputs. Distinguish returned values from printed output and avoid hidden shared state.", practice: "Refactor one longer program into small functions and test each function independently." },
-    { title: "Arrays and strings", topics: ["Indexing", "Length and bounds", "Mutation vs. copying"], lesson: "Learn indexed access and sequence traversal. Check array/string bounds carefully and understand which operations mutate or copy data.", practice: "Build a frequency counter and a routine that transforms a sequence without losing edge cases." }
+    { title: "Variables and data types", topics: ["Declare a variable and assign or update its value", "Numbers: integers, decimals, arithmetic, and remainder", "Strings: text values, quotes, and joining text", "Booleans: true/false and comparison results", "Convert between types; identify invalid or empty input"], lesson: "Choose one language. Learn how values are stored, how a variable's value changes, and how input becomes a number, string, or boolean. Trace a few example values by hand.", practice: "Write a tiny input/output program and check normal values, negative numbers, zero, and invalid input." },
+    { title: "Operators and decisions", topics: ["Arithmetic and assignment operators", "Compare values with ==, <, >, and related operators", "Use AND, OR, and NOT with booleans", "Write if / else if / else branches", "Check equal values, boundaries, and missing input"], lesson: "Use operators to create a condition, then follow the matching branch. Keep each condition readable and test its boundary values.", practice: "Write a small range check and test values just below, on, and just above each boundary." },
+    { title: "Loops and edge cases", topics: ["Repeat work with for and while loops", "Track counters and update a running total", "Stop at the correct loop boundary", "Avoid off-by-one errors and accidental infinite loops", "Test empty, one-item, smallest, and largest inputs"], lesson: "A loop repeats a clear step while its stopping condition is true. Trace the counter and state on every iteration, including the final one.", practice: "Write count and sum loops; test an empty sequence, one item, and boundary values." },
+    { title: "Functions and simple problem solving", topics: ["Give a function clear inputs and a return value", "Separate returning a result from printing it", "Use local variables and parameters", "Split a problem into small steps", "Test ordinary, boundary, and invalid cases"], lesson: "Functions give a problem small named steps. Follow each input and returned value, and keep output separate from the calculation.", practice: "Create a function that computes a result and test it with ordinary and edge-case inputs." },
+    { title: "Arrays, strings, and indexing", topics: ["Read and update an array by index", "Use the correct length and index bounds", "Loop over every item exactly once", "Understand strings as sequences of characters", "Handle empty and single-item sequences safely"], lesson: "Arrays and strings are ordered sequences. Track valid indices carefully and distinguish changing an item from creating a new sequence.", practice: "Traverse a short sequence and test empty, one-item, first-index, and last-index cases." }
   ],
   "Complexity analysis": [
     { title: "Counting operations", topics: ["Input size", "Constant-time work", "Dominant operations"], lesson: "Estimate how work grows with input size by counting the main operations. Ignore constants only after identifying the dominant term.", practice: "Count iterations in short loops and compare the work for doubled input sizes." },
@@ -210,26 +211,66 @@ const problems = [
   ["House Robber","Dynamic Programming","1D DP","Medium","LeetCode","https://leetcode.com/problems/house-robber/"],
   ["Coin Change","Dynamic Programming","Unbounded Knapsack","Medium","LeetCode","https://leetcode.com/problems/coin-change/"],
   ["Jump Game","Greedy","Greedy","Medium","LeetCode","https://leetcode.com/problems/jump-game/"],
-  ["Search in Rotated Sorted Array","Binary Search","Modified Binary Search","Medium","LeetCode","https://leetcode.com/problems/search-in-rotated-sorted-array/"]
-];
-
-const codeforcesTopicMap = [
-  [["two pointers"], "Two Pointers"],
-  [["binary search"], "Binary Search"],
-  [["strings"], "Strings"],
-  [["hashing"], "Hashing"],
-  [["trees"], "Trees"],
-  [["graphs", "dfs and similar", "bfs and similar", "shortest paths"], "Graphs"],
-  [["dp"], "Dynamic Programming"],
-  [["greedy"], "Greedy"],
-  [["sortings"], "Sorting"],
-  [["data structures"], "Data Structures"],
-  [["bitmasks"], "Bit Manipulation"],
-  [["dsu"], "Disjoint Set Union"],
-  [["number theory", "combinatorics", "math"], "Math"],
-  [["brute force"], "Brute Force"],
-  [["implementation"], "Implementation"],
-  [["constructive algorithms"], "Constructive Algorithms"]
+  ["Search in Rotated Sorted Array","Binary Search","Modified Binary Search","Medium","LeetCode","https://leetcode.com/problems/search-in-rotated-sorted-array/"],
+  ["Maximum Subarray","Arrays","Kadane's Algorithm","Medium","LeetCode","https://leetcode.com/problems/maximum-subarray/"],
+  ["Maximum Product Subarray","Arrays","Dynamic Programming","Medium","LeetCode","https://leetcode.com/problems/maximum-product-subarray/"],
+  ["Find Minimum in Rotated Sorted Array","Binary Search","Modified Binary Search","Medium","LeetCode","https://leetcode.com/problems/find-minimum-in-rotated-sorted-array/"],
+  ["Merge Intervals","Arrays","Sorting + Intervals","Medium","LeetCode","https://leetcode.com/problems/merge-intervals/"],
+  ["Insert Interval","Arrays","Intervals","Medium","LeetCode","https://leetcode.com/problems/insert-interval/"],
+  ["Non-overlapping Intervals","Greedy","Intervals","Medium","LeetCode","https://leetcode.com/problems/non-overlapping-intervals/"],
+  ["Trapping Rain Water","Arrays","Two Pointers","Hard","LeetCode","https://leetcode.com/problems/trapping-rain-water/"],
+  ["Subarray Sum Equals K","Arrays","Prefix Sum + Hash Map","Medium","LeetCode","https://leetcode.com/problems/subarray-sum-equals-k/"],
+  ["Longest Repeating Character Replacement","Strings","Sliding Window","Medium","LeetCode","https://leetcode.com/problems/longest-repeating-character-replacement/"],
+  ["Minimum Window Substring","Strings","Sliding Window","Hard","LeetCode","https://leetcode.com/problems/minimum-window-substring/"],
+  ["Longest Palindromic Substring","Strings","Expand Around Center","Medium","LeetCode","https://leetcode.com/problems/longest-palindromic-substring/"],
+  ["Reorder List","Linked List","Two Pointers","Medium","LeetCode","https://leetcode.com/problems/reorder-list/"],
+  ["Remove Nth Node From End of List","Linked List","Two Pointers","Medium","LeetCode","https://leetcode.com/problems/remove-nth-node-from-end-of-list/"],
+  ["Linked List Cycle","Linked List","Fast and Slow Pointers","Easy","LeetCode","https://leetcode.com/problems/linked-list-cycle/"],
+  ["Add Two Numbers","Linked List","Carry Simulation","Medium","LeetCode","https://leetcode.com/problems/add-two-numbers/"],
+  ["Merge k Sorted Lists","Linked List","Heap","Hard","LeetCode","https://leetcode.com/problems/merge-k-sorted-lists/"],
+  ["Min Stack","Stack","Stack Design","Medium","LeetCode","https://leetcode.com/problems/min-stack/"],
+  ["Evaluate Reverse Polish Notation","Stack","Expression Evaluation","Medium","LeetCode","https://leetcode.com/problems/evaluate-reverse-polish-notation/"],
+  ["Generate Parentheses","Backtracking","Decision Tree","Medium","LeetCode","https://leetcode.com/problems/generate-parentheses/"],
+  ["Largest Rectangle in Histogram","Stack","Monotonic Stack","Hard","LeetCode","https://leetcode.com/problems/largest-rectangle-in-histogram/"],
+  ["Invert Binary Tree","Trees","DFS","Easy","LeetCode","https://leetcode.com/problems/invert-binary-tree/"],
+  ["Diameter of Binary Tree","Trees","DFS","Easy","LeetCode","https://leetcode.com/problems/diameter-of-binary-tree/"],
+  ["Balanced Binary Tree","Trees","DFS","Easy","LeetCode","https://leetcode.com/problems/balanced-binary-tree/"],
+  ["Same Tree","Trees","DFS","Easy","LeetCode","https://leetcode.com/problems/same-tree/"],
+  ["Subtree of Another Tree","Trees","DFS","Easy","LeetCode","https://leetcode.com/problems/subtree-of-another-tree/"],
+  ["Kth Smallest Element in a BST","Trees","Inorder Traversal","Medium","LeetCode","https://leetcode.com/problems/kth-smallest-element-in-a-bst/"],
+  ["Validate Binary Search Tree","Trees","DFS","Medium","LeetCode","https://leetcode.com/problems/validate-binary-search-tree/"],
+  ["Lowest Common Ancestor of a BST","Trees","BST","Medium","LeetCode","https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/"],
+  ["Binary Tree Right Side View","Trees","BFS","Medium","LeetCode","https://leetcode.com/problems/binary-tree-right-side-view/"],
+  ["Construct Binary Tree from Preorder and Inorder Traversal","Trees","Divide and Conquer","Medium","LeetCode","https://leetcode.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/"],
+  ["Binary Tree Maximum Path Sum","Trees","DFS","Hard","LeetCode","https://leetcode.com/problems/binary-tree-maximum-path-sum/"],
+  ["Last Stone Weight","Heap","Priority Queue","Easy","LeetCode","https://leetcode.com/problems/last-stone-weight/"],
+  ["Top K Frequent Elements","Heap","Heap + Hash Map","Medium","LeetCode","https://leetcode.com/problems/top-k-frequent-elements/"],
+  ["Find Median from Data Stream","Heap","Two Heaps","Hard","LeetCode","https://leetcode.com/problems/find-median-from-data-stream/"],
+  ["Clone Graph","Graphs","DFS/BFS","Medium","LeetCode","https://leetcode.com/problems/clone-graph/"],
+  ["Pacific Atlantic Water Flow","Graphs","Reverse DFS/BFS","Medium","LeetCode","https://leetcode.com/problems/pacific-atlantic-water-flow/"],
+  ["Rotting Oranges","Graphs","Multi-source BFS","Medium","LeetCode","https://leetcode.com/problems/rotting-oranges/"],
+  ["Course Schedule II","Graphs","Topological Sort","Medium","LeetCode","https://leetcode.com/problems/course-schedule-ii/"],
+  ["Redundant Connection","Graphs","Disjoint Set Union","Medium","LeetCode","https://leetcode.com/problems/redundant-connection/"],
+  ["Word Ladder","Graphs","BFS","Hard","LeetCode","https://leetcode.com/problems/word-ladder/"],
+  ["Minimum Cost to Climb Stairs","Dynamic Programming","1D DP","Easy","LeetCode","https://leetcode.com/problems/min-cost-climbing-stairs/"],
+  ["House Robber II","Dynamic Programming","1D DP","Medium","LeetCode","https://leetcode.com/problems/house-robber-ii/"],
+  ["Decode Ways","Dynamic Programming","1D DP","Medium","LeetCode","https://leetcode.com/problems/decode-ways/"],
+  ["Longest Increasing Subsequence","Dynamic Programming","Subsequence DP","Medium","LeetCode","https://leetcode.com/problems/longest-increasing-subsequence/"],
+  ["Partition Equal Subset Sum","Dynamic Programming","0/1 Knapsack","Medium","LeetCode","https://leetcode.com/problems/partition-equal-subset-sum/"],
+  ["Unique Paths","Dynamic Programming","2D DP","Medium","LeetCode","https://leetcode.com/problems/unique-paths/"],
+  ["Longest Common Subsequence","Dynamic Programming","2D DP","Medium","LeetCode","https://leetcode.com/problems/longest-common-subsequence/"],
+  ["Word Break","Dynamic Programming","String DP","Medium","LeetCode","https://leetcode.com/problems/word-break/"],
+  ["Jump Game II","Greedy","Greedy","Medium","LeetCode","https://leetcode.com/problems/jump-game-ii/"],
+  ["Gas Station","Greedy","Greedy","Medium","LeetCode","https://leetcode.com/problems/gas-station/"],
+  ["Subsets","Backtracking","Decision Tree","Medium","LeetCode","https://leetcode.com/problems/subsets/"],
+  ["Combination Sum","Backtracking","Decision Tree","Medium","LeetCode","https://leetcode.com/problems/combination-sum/"],
+  ["Permutations","Backtracking","Decision Tree","Medium","LeetCode","https://leetcode.com/problems/permutations/"],
+  ["Word Search","Backtracking","Grid DFS","Medium","LeetCode","https://leetcode.com/problems/word-search/"],
+  ["Implement Trie (Prefix Tree)","Trie","Prefix Tree","Medium","LeetCode","https://leetcode.com/problems/implement-trie-prefix-tree/"],
+  ["Counting Bits","Bit Manipulation","Dynamic Programming + Bits","Easy","LeetCode","https://leetcode.com/problems/counting-bits/"],
+  ["Reverse Bits","Bit Manipulation","Bit Operations","Easy","LeetCode","https://leetcode.com/problems/reverse-bits/"],
+  ["Missing Number","Bit Manipulation","XOR","Easy","LeetCode","https://leetcode.com/problems/missing-number/"],
+  ["Single Number","Bit Manipulation","XOR","Easy","LeetCode","https://leetcode.com/problems/single-number/"]
 ];
 
 const roadmapTopicMap = [
@@ -254,7 +295,7 @@ const roadmapTopicMap = [
 ];
 const dailyDsaRotation = [
   "Arrays", "Strings", "Hashing", "Two Pointers", "Binary Search",
-  "Linked Lists", "Stacks", "Trees", "Graphs", "Dynamic Programming"
+  "Linked List", "Stack", "Queues", "Trees", "Graphs", "Dynamic Programming"
 ];
 
 function getRoadmapProblemTopic(day) {
@@ -262,71 +303,22 @@ function getRoadmapProblemTopic(day) {
   return roadmapTopicMap.find(([aliases]) => aliases.some(alias => text.includes(alias)))?.[1];
 }
 
-async function curatedCodeforcesProblems(limit, excludedUrls = new Set()) {
-  const response = await fetch("https://codeforces.com/api/problemset.problems", {
-    signal: AbortSignal.timeout(30000),
-    headers: { "User-Agent": "DEVQUEST DSA seed metadata importer" }
-  });
-  if (!response.ok) throw new Error(`Codeforces metadata request failed (${response.status}).`);
-  const payload = await response.json();
-  if (payload.status !== "OK" || !Array.isArray(payload.result?.problems)) {
-    throw new Error("Codeforces returned an invalid problem metadata response.");
-  }
-
-  const candidates = payload.result.problems
-    .filter(problem => Number(problem.rating) >= 800 && Number(problem.rating) <= 2200 && problem.contestId && problem.index && problem.tags?.length)
-    .map(problem => {
-      const tags = problem.tags.map(tag => tag.toLowerCase());
-      const topicMatch = codeforcesTopicMap.find(([aliases]) => aliases.some(alias => tags.includes(alias)));
-      if (!topicMatch) return null;
-      const rating = Number(problem.rating);
-      return {
-        title: problem.name,
-        topic: topicMatch[1],
-        pattern: problem.tags.join(", ").slice(0, 100),
-        difficulty: rating <= 1200 ? "Easy" : rating <= 1700 ? "Medium" : "Hard",
-        platform: "Codeforces",
-        url: `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`,
-        rating,
-        contestId: Number(problem.contestId),
-        index: problem.index,
-        tagOrder: codeforcesTopicMap.indexOf(topicMatch)
-      };
-    })
-    .filter(problem => problem && !excludedUrls.has(problem.url))
-    .sort((a, b) => a.rating - b.rating || a.contestId - b.contestId || a.index.localeCompare(b.index));
-
-  const groups = codeforcesTopicMap.map((_, index) => candidates.filter(problem => problem.tagOrder === index));
-  const selected = [];
-  const used = new Set();
-  for (let cursor = 0; selected.length < limit; cursor++) {
-    const group = groups[cursor % groups.length];
-    const next = group.find(problem => !used.has(problem.url));
-    if (next) {
-      used.add(next.url);
-      selected.push(next);
-    } else if (groups.every(items => items.every(problem => used.has(problem.url)))) {
-      break;
-    }
-  }
-  if (selected.length < limit) {
-    throw new Error(`Codeforces metadata only provided ${selected.length} new suitable unique problems; ${limit} are required.`);
-  }
-  return selected.map(({ rating, contestId, index, tagOrder, ...problem }) => problem);
-}
-
 try {
   await connectDB();
-  const sourcedCompanies = await communityTechCompanies();
-  const companyCatalog = [...new Map([...companies, ...sourcedCompanies].map(company => [company.slug, company])).values()];
-  const companyResults = await Company.bulkWrite(companyCatalog.map(company => ({
-    updateOne: {
-      filter: { slug: company.slug },
-      update: { $setOnInsert: company },
-      upsert: true
-    }
-  })));
-  console.log(`Company directory source contains ${sourcedCompanies.length} employers; inserted ${companyResults.upsertedCount} new records.`);
+  if (process.argv.includes("--dsa-only")) {
+    console.log("Skipping employer directory import (--dsa-only).");
+  } else {
+    const sourcedCompanies = await communityTechCompanies();
+    const companyCatalog = [...new Map([...companies, ...sourcedCompanies].map(company => [company.slug, company])).values()];
+    const companyResults = await Company.bulkWrite(companyCatalog.map(company => ({
+      updateOne: {
+        filter: { slug: company.slug },
+        update: { $setOnInsert: company },
+        upsert: true
+      }
+    })));
+    console.log(`Company directory source contains ${sourcedCompanies.length} employers; inserted ${companyResults.upsertedCount} new records.`);
+  }
 
   const existingDays = new Map((await RoadmapDay.find().sort({ day: 1 })).map(day => [day.day, day]));
   const topicVisits = new Map();
@@ -342,73 +334,42 @@ try {
     day.level = dayNumber <= 40 ? "Beginner" : dayNumber <= 90 ? "Intermediate" : "Advanced";
     day.topics = guide.topics;
     day.lesson = guide.lesson;
-    let studyTask = day.tasks.find(task => task.title.startsWith("Study ") || task.title.startsWith("Study:"));
+    let studyTask = day.tasks.find(task => !task.problems?.length && (task.title.startsWith("Study ") || task.title.startsWith("Study:")));
     if (!studyTask) {
       studyTask = day.tasks.create({});
-      day.tasks.push(studyTask);
+      day.tasks.unshift(studyTask);
     }
+    day.tasks = day.tasks.filter(task => task === studyTask || task.problems?.length);
     studyTask.title = `Study: ${guide.title}`;
     studyTask.description = guide.lesson;
     studyTask.xp = 5;
-    let practiceTask = day.tasks.find(task => task.title.startsWith("Practice "));
-    if (!practiceTask) {
-      practiceTask = day.tasks.create({});
-      day.tasks.push(practiceTask);
-    }
-    practiceTask.title = `Practice: ${guide.title}`;
-    practiceTask.description = guide.practice;
-    practiceTask.xp = 5;
-    let applicationTask = day.tasks.find(task => task.title.startsWith("Review and reflect"))
-      || day.tasks.find(task => task.title.startsWith("Apply:"));
-    if (!applicationTask) {
-      applicationTask = day.tasks.create({});
-      day.tasks.push(applicationTask);
-    }
-    applicationTask.title = `Apply: ${topic}`;
-    applicationTask.description = `Implement today's idea from memory and test one normal case and one edge case.`;
-    applicationTask.xp = 3;
     await day.save();
   }
   console.log("Created or updated the curated 120-day starter roadmap.");
 
-  const starterProblems = problems.map(([title, topic, pattern, difficulty, platform, url]) => ({ title, topic, pattern, difficulty, platform, url }));
-  await Problem.bulkWrite(starterProblems.map(problem => ({
+  const curatedProblems = await getCompanyPrepLeetCodeProblems(problems);
+  await Problem.bulkWrite(curatedProblems.map(problem => ({
     updateOne: {
       filter: { url: problem.url },
       update: { $setOnInsert: problem },
       upsert: true
     }
   })), { ordered: false });
-  const currentProblemCount = await Problem.countDocuments({ archived: false });
   const starterProblemCount = await Problem.countDocuments({
     archived: false,
     platform: "LeetCode",
-    url: { $in: starterProblems.map(problem => problem.url) }
+    url: { $in: curatedProblems.map(problem => problem.url) }
   });
-  const problemTarget = Math.max(1000, starterProblemCount);
-  let insertedProblemCount = 0;
-  if (currentProblemCount < problemTarget) {
-    const existingCodeforces = await Problem.find({ platform: "Codeforces", archived: false }).select("url").lean();
-    const codeforces = await curatedCodeforcesProblems(
-      problemTarget - currentProblemCount,
-      new Set(existingCodeforces.map(problem => problem.url))
-    );
-    const problemResults = await Problem.bulkWrite(codeforces.map(problem => ({
-      updateOne: {
-        filter: { url: problem.url },
-        update: { $setOnInsert: problem },
-        upsert: true
-      }
-    })), { ordered: false });
-    insertedProblemCount = problemResults.upsertedCount;
+  const finalProblemCount = await Problem.countDocuments({ archived: false, platform: "LeetCode" });
+  if (starterProblemCount !== curatedProblems.length) {
+    throw new Error(`Only ${starterProblemCount} of ${curatedProblems.length} curated LeetCode problems are active after seeding.`);
   }
-  const finalProblemCount = await Problem.countDocuments({ archived: false });
-  if (finalProblemCount < problemTarget) throw new Error(`DSA library contains ${finalProblemCount} problems; ${problemTarget} are required.`);
-  console.log(`DSA library metadata: ${finalProblemCount} total problems; inserted ${insertedProblemCount} new records.`);
+  if (finalProblemCount < curatedProblems.length) throw new Error(`DSA library contains ${finalProblemCount} LeetCode problems; ${curatedProblems.length} are required.`);
+  console.log(`DSA library metadata: ${finalProblemCount} active LeetCode problems; ${curatedProblems.length} are in the company-prep catalog.`);
 
   const roadmapDays = await RoadmapDay.find().sort({ day: 1 });
   const topicOffsets = new Map();
-  const allDsaProblems = await Problem.find({ archived: false }).sort({ title: 1 }).select("_id topic").lean();
+  const allDsaProblems = await Problem.find({ archived: false, platform: "LeetCode" }).sort({ title: 1 }).select("_id topic").lean();
   if (allDsaProblems.length < 5) throw new Error("At least five DSA problems are required to seed daily practice.");
   const problemsByTopic = new Map();
   for (const problem of allDsaProblems) {

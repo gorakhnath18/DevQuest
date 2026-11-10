@@ -5,6 +5,7 @@ import RoadmapTaskProgress from "../models/RoadmapTaskProgress.js";
 import RoadmapDay from "../models/RoadmapDay.js";
 import RoadmapProgress from "../models/RoadmapProgress.js";
 import ProblemProgress from "../models/ProblemProgress.js";
+import XpEvent from "../models/XpEvent.js";
 import { awardXp } from "../utils/xp.js";
 
 const levels = ["Beginner", "Intermediate", "Advanced"];
@@ -54,6 +55,18 @@ async function markProblemSolved(userId, problemId) {
   const points = { Easy: 1, Medium: 2, Hard: 3 }[problem.difficulty];
   await awardXp(userId, `problem:${problem._id}:solved`, points, `Solved ${problem.title}`);
   await completeAssignedTasks(userId, problem);
+}
+
+async function markProblemUnsolved(userId, problemId) {
+  const problem = await Problem.findById(problemId);
+  if (!problem) return;
+  const progress = await ProblemProgress.findOne({ user: userId, problem: problem._id });
+  if (progress?.status !== "Solved") return;
+  progress.status = "Not Started";
+  progress.solvedAt = null;
+  await progress.save();
+  await XpEvent.deleteOne({ user: userId, key: `problem:${problem._id}:solved` });
+  await uncompleteAssignedTasks(userId, problem);
 }
 
 function normalizeSubjects(subjects) {
@@ -272,13 +285,15 @@ export async function toggleRoadmapTask(req, res) {
   if (!task) return res.status(404).json({ message: "Task not found." });
   let progress = await RoadmapTaskProgress.findOne({ user: req.user._id, roadmap: roadmap._id, task: task._id });
   if (!progress) progress = new RoadmapTaskProgress({ user: req.user._id, roadmap: roadmap._id, task: task._id });
-  if (progress.completed) return res.status(409).json({ message: "Completed roadmap tasks cannot be unchecked." });
   progress.completed = !progress.completed;
   progress.completedAt = progress.completed ? new Date() : undefined;
   await progress.save();
   if (progress.completed) {
     await awardXp(req.user._id, `custom-roadmap:${roadmap._id}:${task._id}`, task.xp, `Completed: ${task.title}`);
     for (const problemId of task.problems) await markProblemSolved(req.user._id, problemId);
+  } else {
+    await XpEvent.deleteOne({ user: req.user._id, key: `custom-roadmap:${roadmap._id}:${task._id}` });
+    for (const problemId of task.problems) await markProblemUnsolved(req.user._id, problemId);
   }
   res.json({ progress: { completed: progress.completed, completedAt: progress.completedAt } });
 }
@@ -316,5 +331,38 @@ export async function completeAssignedTasks(userId, problem) {
       await progress.save();
     }
     await awardXp(userId, `roadmap:${day._id}:${task._id}`, task.xp, `Completed: ${task.title}`);
+  }
+}
+
+export async function uncompleteAssignedTasks(userId, problem) {
+  const roadmaps = await Roadmap.find({ owner: userId, "days.tasks.problems": problem._id });
+  const completedProblemIds = new Set((await ProblemProgress.find({ user: userId, status: "Solved" }).select("problem").lean())
+    .map(progress => String(progress.problem)));
+  for (const roadmap of roadmaps) {
+    for (const day of roadmap.days) {
+      for (const task of day.tasks) {
+        if (!task.problems.some(id => String(id) === String(problem._id))) continue;
+        if (task.problems.every(id => completedProblemIds.has(String(id)))) continue;
+        await RoadmapTaskProgress.findOneAndUpdate(
+          { user: userId, roadmap: roadmap._id, task: task._id, completed: true },
+          { $set: { completed: false }, $unset: { completedAt: 1 } }
+        );
+        await XpEvent.deleteOne({ user: userId, key: `custom-roadmap:${roadmap._id}:${task._id}` });
+      }
+    }
+  }
+
+  const legacyDays = await RoadmapDay.find({ "tasks.problems": problem._id });
+  for (const day of legacyDays) {
+    const task = day.tasks.find(entry => entry.problems.some(id => String(id) === String(problem._id)));
+    if (!task || task.problems.every(id => completedProblemIds.has(String(id)))) continue;
+    const progress = await RoadmapProgress.findOne({ user: userId, day: day._id });
+    if (!progress?.completedTasks.some(id => String(id) === String(task._id))) continue;
+    progress.completedTasks = progress.completedTasks.filter(id => String(id) !== String(task._id));
+    progress.completed = day.tasks.length > 0 && day.tasks.every(entry =>
+      progress.completedTasks.some(id => String(id) === String(entry._id))
+    );
+    await progress.save();
+    await XpEvent.deleteOne({ user: userId, key: `roadmap:${day._id}:${task._id}` });
   }
 }
