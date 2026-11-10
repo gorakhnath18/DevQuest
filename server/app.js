@@ -10,13 +10,24 @@ import profileRoutes from "./routes/profileRoutes.js";
 import customRoadmapRoutes from "./routes/customRoadmapRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
+import { connectDB } from "./config/db.js";
 
 const app = express();
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
 app.use(express.json({ limit: "200kb" }));
 app.use(morgan("dev"));
+app.get("/", (req, res) => res.json({ app: "DEVQUEST API", health: "/api/health" }));
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+app.get("/api", (req, res) => res.json({ app: "DEVQUEST API", health: "/api/health" }));
 app.get("/api/health", (req, res) => res.json({ status: "ok", app: "DEVQUEST API" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/roadmap", roadmapRoutes);

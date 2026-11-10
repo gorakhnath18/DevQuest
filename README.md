@@ -116,6 +116,8 @@ The client and Express API can both run on Vercel as **two Vercel projects conne
 
 Vercel Git integration redeploys when you push later commits. Ordinary code deploys do **not** delete MongoDB data: the app connects to the configured database and keeps existing records. Data can be lost if the database URI/database is changed, a seed or migration explicitly overwrites/deletes records, or collections are manually cleared. Back up MongoDB before schema/data migrations and avoid destructive seed options in production. This project’s seed script is for initializing/updating shared curriculum and directory data, not for deployment.
 
+The API responds at `/` and `/api` with its service information; `/api/health` is the health endpoint. API requests connect to MongoDB using the server-only `MONGO_URI` environment variable.
+
 ## First use
 
 1. Open the frontend URL.
