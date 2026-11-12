@@ -3,6 +3,48 @@ import { BookOpen, Check, ChevronDown, ChevronUp, ExternalLink, Search } from "l
 import api from "../services/api";
 import "./roadmapBuilder.css";
 
+function mapStudyPlanToRoadmapDays({ dsaProblems, studyDays }) {
+  const problemsByDay = new Map();
+  dsaProblems.forEach(problem => {
+    const items = problemsByDay.get(problem.day) || [];
+    items.push({ ...problem, _id: problem.sourceKey });
+    problemsByDay.set(problem.day, items);
+  });
+  return studyDays.map(day => {
+    const topics = day.lessons.map(lesson => lesson.title);
+    const lesson = day.lessons.map(item => item.description).filter(Boolean).join(" ");
+    const dayProblems = problemsByDay.get(day.day) || [];
+    return {
+      _id: `sheet-day-${day.day}`,
+      day: day.day,
+      phase: day.phase,
+      title: topics.join(" · "),
+      studyDate: day.date,
+      resource: day.resource,
+      level: day.day <= 40 ? "Beginner" : day.day <= 90 ? "Intermediate" : "Advanced",
+      topics,
+      lesson,
+      progress: { completedTasks: [], completed: false },
+      tasks: [
+        {
+          _id: `sheet-task-${day.day}`,
+          title: `Study: ${day.title}`,
+          description: lesson,
+          xp: 5,
+          problems: []
+        },
+        {
+          _id: `sheet-dsa-task-${day.day}`,
+          title: `DSA practice: ${[...new Set(dayProblems.map(problem => problem.topic))].join(", ")}`,
+          description: "Solve the five problems assigned in the study-plan sheet.",
+          xp: 0,
+          problems: dayProblems
+        }
+      ]
+    };
+  });
+}
+
 export default function Roadmap() {
   const [days, setDays] = useState([]);
   const [problems, setProblems] = useState([]);
@@ -13,23 +55,49 @@ export default function Roadmap() {
 
   async function load() {
     setError("");
+    const sheetDataRequest = import("../data/studyPlanSheet.json").then(module => module.default);
     try {
-      const [roadmapResponse, problemsResponse] = await Promise.all([
+      const [roadmapResponse, problemsResponse, sheetData] = await Promise.all([
         api.get("/roadmap"),
-        api.get("/problems", { params: { limit: 2000, platform: "LeetCode" } })
+        api.get("/problems", { params: { limit: 1000 } }),
+        sheetDataRequest
       ]);
-      const roadmapDays = roadmapResponse.data;
+      const roadmapDays = Array.isArray(roadmapResponse.data) && roadmapResponse.data.length
+        ? roadmapResponse.data
+        : mapStudyPlanToRoadmapDays(sheetData);
       setDays(roadmapDays);
-      setProblems(problemsResponse.data.items);
+      setProblems(problemsResponse.data.items || []);
       setOpenDay(current => current || roadmapDays.find(day => !day.progress.completed)?._id || roadmapDays[0]?._id || null);
+      setError("");
     } catch (e) {
-      setError(e.response?.data?.message || "Unable to load the 120-day roadmap.");
+      let sheetData;
+      try {
+        sheetData = await sheetDataRequest;
+      } catch (dataError) {
+        setError(dataError.message || "Unable to load the spreadsheet study plan.");
+        return;
+      }
+      const fallbackDays = mapStudyPlanToRoadmapDays(sheetData);
+      setDays(fallbackDays);
+      setProblems(sheetData.dsaProblems.map(problem => ({
+        ...problem,
+        _id: problem.sourceKey,
+        userProgress: { status: "Not Started", notes: "", attempts: 0 }
+      })));
+      setOpenDay(current => current || fallbackDays.find(day => !day.progress.completed)?._id || fallbackDays[0]?._id || null);
+      setError(e.response?.data?.message || "Using the spreadsheet study plan offline. Progress saving requires the API.");
     }
   }
 
   useEffect(() => { load(); }, []);
 
   const problemById = useMemo(() => new Map(problems.map(problem => [problem._id, problem])), [problems]);
+  const [majorTopics, setMajorTopics] = useState([]);
+  useEffect(() => {
+    import("../data/studyPlanSheet.json")
+      .then(module => setMajorTopics(module.default.majorTopicTimeline))
+      .catch(error => setError(error.message || "Unable to load major topic milestones."));
+  }, []);
   const filteredDays = useMemo(() => days.filter(day =>
     `${day.day} ${day.title} ${day.phase} ${(day.topics || []).join(" ")}`
       .toLowerCase().includes(search.toLowerCase())
@@ -92,6 +160,19 @@ export default function Roadmap() {
       <div><strong>{studyTasks.length ? Math.round(completedStudyTasks / studyTasks.length * 100) : 0}%</strong><small>STUDY TASKS DONE</small></div>
       <p>Easy problems earn 1 XP, Medium 2 XP, and Hard 3 XP. Click a checked box again to undo it.</p>
     </div>
+    <section className="major-topic-timeline" aria-label="Major topic start days">
+      <div className="major-topic-heading">
+        <div><span className="eyebrow">MAJOR TOPIC MILESTONES</span><h2>When each area starts</h2></div>
+        <span className="muted">Based on your 120-day sheet</span>
+      </div>
+      <div className="major-topic-grid">
+        {majorTopics.map(topic => <article className="major-topic-card" key={`${topic.fromDay}-${topic.title}`}>
+          <span>FROM DAY {String(topic.fromDay).padStart(2, "0")}</span>
+          <b>{topic.title}</b>
+          <small>Days {topic.fromDay}–{topic.toDay} · starts {topic.fromDate}</small>
+        </article>)}
+      </div>
+    </section>
     <div className="roadmap-toolbar">
       <div className="search-box"><Search size={16}/><input aria-label="Find a roadmap day" placeholder="Find a day or topic…" value={search} onChange={event => setSearch(event.target.value)}/></div>
       <span className="muted">{days.length} days</span>
@@ -120,6 +201,7 @@ export default function Roadmap() {
                 <button type="button" className={`rb-check ${checked ? "checked" : ""}`} role="checkbox" aria-checked={checked} disabled={savingIds.includes(task._id)} aria-label={`${checked ? "Unmark" : "Mark"} ${task.title} ${checked ? "incomplete" : "complete"}`} onClick={() => toggleStudyTask(day, task)}>{checked && <Check size={14}/>}</button>
                 <div className="starter-study-copy">
                   <b><BookOpen size={14}/> What to learn: {task.title.replace(/^Study:\s*/, "")}</b>
+                  {(day.studyDate || day.resource) && <small>{[day.studyDate, day.resource].filter(Boolean).join(" · ")}</small>}
                   {day.lesson && <p>{day.lesson}</p>}
                   {!!day.topics?.length && <ul>{day.topics.map(topic => <li key={topic}>{topic}</li>)}</ul>}
                 </div>

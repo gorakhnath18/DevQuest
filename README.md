@@ -14,7 +14,7 @@ A full-stack MERN starter project for tracking a 120-day SDE preparation journey
 - Shared DSA problem library and personal problem status
 - Public profile search by username
 - Basic responsive UI
-- Seed script for 120 roadmap days and starter DSA problems
+- Seed script for the sheet-based 120-day roadmap and 600 DSA assignments
 
 ## Requirements
 
@@ -70,9 +70,9 @@ Make sure MongoDB is configured, then run:
 npm run seed --prefix server
 ```
 
-This seeds the curated 120-day starter roadmap with one study checkpoint and five linked LeetCode practice problems per day. The DSA library is seeded with 1,000 free, topic-balanced LeetCode problems (250 Easy, 600 Medium, 150 Hard), selected from public problem metadata and prioritized by LeetCode problem ID. This is an interview-prep selection, not an official company ranking. Only titles, topics, difficulty, and LeetCode links are imported; problem statements and solutions are not copied. The seed retrieves metadata from the [Alfa LeetCode API](https://alfa-leetcode-api.onrender.com/) and fails explicitly if it cannot build and verify all 1,000 unique entries. The study checkpoint summarizes the day's concepts as a short lesson and bullet points. Study and problem checkboxes can be toggled on and off; undoing a solved problem also removes its XP and updates assigned-roadmap progress. Existing problems on other platforms are preserved and remain available through the DSA library's platform filter. The seed also imports technology employers with company and careers links from the community-maintained [Remote In Tech directory](https://github.com/remoteintech/remote-jobs) (ISC-licensed). The company source currently contains more than 600 entries with both links.
+The 120-day study plan and all 600 dated DSA assignments are maintained in [`client/src/data/studyPlanSheet.json`](./client/src/data/studyPlanSheet.json), imported from the supplied workbook. The seed loads those exact days and assignments, resolves LeetCode links and difficulty metadata, and deactivates the former 1,000-question generated LeetCode catalog. Existing user-created problems and problems on other platforms are preserved. The roadmap shows every lesson from the sheet and a major-topic timeline with start days for Java, OOP, Spring Boot, LLD, Agentic AI, HLD, and the other phases. Problem titles, topics, platform, difficulty, and links are metadata only; problem statements and solutions are not copied. The seed also imports technology employers with company and careers links from the community-maintained [Remote In Tech directory](https://github.com/remoteintech/remote-jobs) (ISC-licensed). The company source currently contains more than 600 entries with both links.
 
-To update only the DSA library and starter roadmap without refreshing the employer directory, run `npm run seed:dsa --prefix server`.
+To import the sheet-based DSA library and 120-day roadmap without refreshing the employer directory, run `npm run seed:dsa --prefix server`.
 
 Compensation is shown as **Not verified** where a reliable, dated salary source is unavailable. The directory does not guarantee current hiring or salary.
 
@@ -80,7 +80,7 @@ Compensation is shown as **Not verified** where a reliable, dated salary source 
 
 Use the status selector in the Company Directory or open **Applications** to track Interested, Applied, Assessment, Interview, Selected, Offer, Accepted, Rejected, and Withdrawn statuses. Application data and notes are private to the account that created them.
 
-The 120-day starter plan is the roadmap page's default and is shared as a curriculum; each account keeps its own task and problem completion. On first visit, choose to start today or tomorrow. Missed earlier days remain available and are shown on Overview as catch-up reminders; you may also complete future days early. Each day includes one study checkpoint with concise lesson guidance and five linked practice problems. Solving an assigned problem synchronizes its completion with the DSA library and awards 1 XP for Easy, 2 XP for Medium, or 3 XP for Hard. Unchecking a completed item removes its XP award. On server startup, existing problem XP awards are reconciled to those difficulty values.
+The 120-day sheet plan is the roadmap page's default and is shared as a curriculum; each account keeps its own task and problem completion. The major-topic timeline shows when each learning area begins. On first visit, choose to start today or tomorrow. Missed earlier days remain available and are shown on Overview as catch-up reminders; you may also complete future days early. Each day includes the sheet's learning topics and five assigned DSA problems. Solving an assigned problem synchronizes its completion with the DSA library and awards 1 XP for Easy, 2 XP for Medium, or 3 XP for Hard. Unchecking a completed item removes its XP award. On server startup, existing problem XP awards are reconciled to those difficulty values.
 
 Find Friends can send a direct roadmap invitation and create a recipient-bound invitation link. An accepted contributor can view the roadmap owner's progress overview; this does not merge or edit either person's progress. Job applications and private notes remain visible only to their owner.
 
@@ -135,7 +135,7 @@ The API responds at `/` and `/api` with its service information; `/api/health` i
 - Public profile responses intentionally omit email and private notes.
 - The starter uses a bearer JWT stored in localStorage for ease of local development. Before production, consider moving authentication to secure, httpOnly cookies and adding email verification, password reset, stronger rate limits, tests and deployment configuration.
 - Shared DSA edits are restricted to signed-in users. The API records who created/updated a problem. Add moderation and revision rollback before opening the library to a large public community.
-- The seed DSA entries are examples with links and metadata, not copied question statements.
+- DSA rows contain sheet problem titles and metadata links, not copied problem statements or solutions.
 
 ## Project structure
 

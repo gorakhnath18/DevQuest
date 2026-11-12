@@ -104,6 +104,15 @@
 .starter-roadmap-summary small{font:9px 'DM Mono';letter-spacing:.5px;color:var(--muted);margin-top:4px}
 .starter-roadmap-summary p{margin:0 0 0 auto;color:var(--muted);font-size:11px}
 .starter-day-list{display:grid;gap:9px}
+.major-topic-timeline{padding:16px;margin:0 0 18px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.major-topic-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.major-topic-heading h2{margin:5px 0 0;font:600 16px 'Space Grotesk'}
+.major-topic-heading>.muted{font-size:10px}
+.major-topic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.major-topic-card{display:grid;gap:5px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.major-topic-card>span{font:9px 'DM Mono';color:#72d6e0;letter-spacing:.5px}
+.major-topic-card>b{font-size:11px;line-height:1.45}
+.major-topic-card>small{font-size:10px;color:var(--muted)}
 .starter-day-card{overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:10px}
 .starter-day-toggle{width:100%;display:flex;align-items:center;gap:12px;padding:10px 12px;border:0;background:transparent;color:#dbe5f3;text-align:left;cursor:pointer}
 .starter-day-toggle:hover{background:#ffffff05}
@@ -130,7 +139,7 @@
 .starter-problem-copy>a{display:inline-flex;align-items:center;gap:5px;width:fit-content;color:#86d6de;font-size:11px}
 .starter-problem-copy>a:hover{text-decoration:underline}
 .starter-problem.completed em{color:#7d91a4}
-@media(max-width:700px){.starter-roadmap-summary{flex-wrap:wrap}.starter-roadmap-summary p{width:100%;margin:2px 0 0}.starter-day-content{padding-left:16px}.starter-day-title b{white-space:normal}}
+@media(max-width:700px){.starter-roadmap-summary{flex-wrap:wrap}.starter-roadmap-summary p{width:100%;margin:2px 0 0}.starter-day-content{padding-left:16px}.starter-day-title b{white-space:normal}.major-topic-heading{align-items:flex-start;flex-direction:column}}
 .rb-recommended-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid #1d2b3c}
 .rb-recommended-item>span{display:grid;gap:3px;flex:1;min-width:0}
 .rb-recommended-item>span>b{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

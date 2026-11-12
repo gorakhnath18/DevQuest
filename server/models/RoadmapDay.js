@@ -11,6 +11,8 @@ const roadmapDaySchema = new mongoose.Schema({
   day: { type: Number, required: true, unique: true, min: 1, max: 120 },
   phase: { type: String, required: true },
   title: { type: String, required: true },
+  studyDate: { type: String, default: "" },
+  resource: { type: String, default: "" },
   level: { type: String, enum: ["Beginner", "Intermediate", "Advanced"], default: "Beginner" },
   topics: [{ type: String }],
   lesson: { type: String, default: "" },

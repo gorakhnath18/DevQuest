@@ -7,21 +7,50 @@ export default function DSA() {
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
-  const [platform, setPlatform] = useState("LeetCode");
+  const [platform, setPlatform] = useState("All");
   const [platforms, setPlatforms] = useState([]);
+  const [sheetTopics, setSheetTopics] = useState([]);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [savingIds, setSavingIds] = useState([]);
   const [form, setForm] = useState({ title:"", topic:"Arrays", pattern:"", difficulty:"Easy", platform:"LeetCode", url:"" });
-  const load = () => api.get("/problems", { params: { limit: 2000, platform: platform === "All" ? undefined : platform } }).then(r => {
-    setItems(r.data.items);
-    setTotal(r.data.total);
-    setPlatforms(r.data.platforms || []);
-    setError("");
-  }).catch(e => setError(e.response?.data?.message || "Unable to load DSA library."));
+  async function load() {
+    const sheetDataRequest = import("../data/studyPlanSheet.json").then(module => module.default);
+    try {
+      const [{ data }, sheetData] = await Promise.all([
+        api.get("/problems", { params: { limit: 1000, platform: platform === "All" ? undefined : platform } }),
+        sheetDataRequest
+      ]);
+      setItems(data.items);
+      setTotal(data.total);
+      setPlatforms(data.platforms || []);
+      setSheetTopics([...new Set(sheetData.dsaProblems.map(problem => problem.topic))]);
+      setError("");
+    } catch (e) {
+      let sheetData;
+      try {
+        sheetData = await sheetDataRequest;
+      } catch (dataError) {
+        setError(dataError.message || "Unable to load the spreadsheet DSA data.");
+        return;
+      }
+      const sheetItems = sheetData.dsaProblems
+        .filter(problem => platform === "All" || problem.platform === platform)
+        .map(problem => ({
+          ...problem,
+          _id: problem.sourceKey,
+          userProgress: { status: "Not Started", notes: "", attempts: 0 }
+        }));
+      setItems(sheetItems);
+      setTotal(sheetItems.length);
+      setPlatforms([...new Set(sheetData.dsaProblems.map(problem => problem.platform))]);
+      setSheetTopics([...new Set(sheetData.dsaProblems.map(problem => problem.topic))]);
+      setError(e.response?.data?.message || "Showing spreadsheet DSA data offline; progress saving requires the API.");
+    }
+  }
   useEffect(() => { load(); }, [platform]);
-  const topics = useMemo(() => [...new Set(items.map(p => p.topic))].sort(), [items]);
+  const topics = useMemo(() => [...new Set([...sheetTopics, ...items.map(p => p.topic)])].sort(), [items, sheetTopics]);
   const filtered = items.filter(p => (difficulty === "All" || p.difficulty === difficulty) && (topic === "All" || p.topic === topic) && `${p.title} ${p.topic} ${p.pattern}`.toLowerCase().includes(query.toLowerCase()));
   async function toggleSolved(problem) {
     if (savingIds.includes(problem._id)) return;
